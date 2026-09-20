@@ -1,0 +1,22 @@
+services:
+  api:
+    build: ./backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports: ["8000:8000"]
+    env_file: ./backend/.env
+  frontend:
+    build: ./frontend
+    command: npm run start
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+    depends_on: [api]
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    environment:
+      POSTGRES_DB: navicast
+      POSTGRES_USER: navicast
+      POSTGRES_PASSWORD: navicast
+    volumes: ["./database/schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro"]
+  redis:
+    image: redis:7-alpine

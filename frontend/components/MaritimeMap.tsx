@@ -1,0 +1,10 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+
+type Vessel={id:string;name:string;lat:number;lng:number;speed_kn:number;draft_m:number;dwt:number;eta:string;destination_port_id:string;status:string;delay_risk:string;vessel_type:string};
+export function MaritimeMap({vessels,onSelect}:{vessels:Vessel[];onSelect:(v:Vessel)=>void}) {
+ const mapNode=useRef<HTMLDivElement>(null); const map=useRef<any>(null); const [fallback,setFallback]=useState(false);
+ useEffect(()=>{let cancelled=false; (async()=>{try{const maplibregl=(await import("maplibre-gl")).default;if(!mapNode.current||cancelled)return; map.current=new maplibregl.Map({container:mapNode.current,style:"https://demotiles.maplibre.org/style.json",center:[86,10],zoom:2.5,attributionControl:false}); map.current.addControl(new maplibregl.NavigationControl({showCompass:false}),"top-right"); map.current.on("load",()=>vessels.forEach(v=>{const el=document.createElement("button");el.className=`vessel-pin ${v.delay_risk.toLowerCase()}`;el.setAttribute("aria-label",`Select ${v.name}`);el.innerHTML="✦";el.onclick=()=>onSelect(v);new maplibregl.Marker({element:el}).setLngLat([v.lng,v.lat]).addTo(map.current)}));}catch{setFallback(true)}})();return()=>{cancelled=true;map.current?.remove()};},[vessels,onSelect]);
+ if(fallback) return <div className="map-fallback"><div className="gridlines"/><span className="map-label australia">Australia</span><span className="map-label ocean">Indian Ocean</span><span className="map-label india">East Coast India</span><svg viewBox="0 0 100 65" aria-label="Operational route plot"><path d="M88 55 C70 45 55 50 40 38 S20 26 16 18"/><path d="M92 42 C70 38 52 43 40 38"/><circle cx="40" cy="38" r="2"/><circle cx="55" cy="44" r="2"/><circle cx="70" cy="45" r="2"/></svg><p className="map-fallback-note">Map tiles unavailable. Operational route plot remains available in demo mode.</p></div>;
+ return <div className="map-shell"><div ref={mapNode} className="map-canvas"/><div className="map-overlay"><span className="pulse-dot"/> AIS demo telemetry</div></div>;
+}
